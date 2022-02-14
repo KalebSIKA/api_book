@@ -7,11 +7,11 @@ from flask import Flask, jsonify, redirect, render_template, request, url_for, a
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 load_dotenv()
-# https://kaleb-sika-flask-api-book.herokuapp.com/ 
+
 app=Flask(__name__)#creer une instance de l'application
 motdepasse="root"
 
-app.config['SQLALCHEMY_DATABASE_URI']="postgresql://uhqelmympoowfd:92a39a2691254d68d6b496d23b001723d743eec405b3ff320c40beb201d5acff@ec2-54-209-221-231.compute-1.amazonaws.com:5432/d3phojtih3pg64"
+app.config['SQLALCHEMY_DATABASE_URI']="postgresql://postgres:{}@localhost:5432/projetflask".format(motdepasse)
 #connexion a la base de données
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -70,14 +70,14 @@ class Livre(db.Model):
         self.editeur=editeur
         self.categorie_id=categorie_id
 
-    def __init__(self,id,isbn,titre,date_publication,auteur,editeur,categorie_id):
+    """def __init__(self,id,isbn,titre,date_publication,auteur,editeur,categorie_id):
         self.isbn=isbn
         self.titre=titre
         self.date_publication=date_publication
         self.auteur=auteur
         self.editeur=editeur
         self.categorie_id=categorie_id
-    
+    """
     def insert(self):
         db.session.add(self)
         db.session.commit()
@@ -163,12 +163,12 @@ def return_erk():
     return jsonify({
             'success': False,
             'error':400,
-            'message': "unable to delete category , category includes books",
+            'message': "unable to delete/patch category , category includes books ",
         })
 def return_err():
     return jsonify({
             'success': False,
-            'error':400,
+            'error':404,
             'message': "bad_request verify the existence of the object ",
         })
 ###############################################################
@@ -295,24 +295,42 @@ def delete_livres(id):
 @app.route('/categories/<int:id>',methods=['PATCH'] )
 def update_categorie(id):
     if exist_id_cat(id):
-        data = request.get_json()
-        categorie= Categorie.query.get(id)
-        if 'libelle_categorie' in data:
-            categorie.libelle_categorie = data['libelle_categorie']
-            #query.libelle_categorie = input()
-            categorie.update()
-        else:
+        try:
+            data = request.get_json()
+            try:
+              categorie= Categorie.query.get(id)
+            except:
+                abort(404)
+
+            if len(data)!=0:
+                if 'libelle_categorie' in data:
+                    categorie.libelle_categorie = data['libelle_categorie']
+                    #query.libelle_categorie = input()
+                    categorie.update()
+                else:
+                    return jsonify({
+                    'success': False,
+                    'error':400,
+                    'message': " bad request you have to enter empty fields",
+                })
+                return jsonify({
+                    'success modify': True,
+                    'categorie': categorie.format(),
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error':400,
+                    'message': " bad request you have to enter empty fields",
+                })
+        except:
             return jsonify({
-            'success': False,
-            'error':400,
-            'message': "You have entered empty information",
-        })
-        return jsonify({
-            'success modify': True,
-            'categorie': categorie.format(),
-        })
+                    'success': False,
+                    'error':400,
+                    'message': " bad request you have to enter empty fields",
+                })
     else:
-        return return_err()
+            return return_err()
 ###############################################################
 #modify a specific book by its identifier(id)
 ###############################################################
@@ -322,18 +340,31 @@ def update_livres(id):
         data = request.get_json()
         livre = Livre.query.get(id)
         try:
+            if len(data)!=0:
                 if   'titre' in data and 'auteur' in data and 'editeur' in data:
                     livre.titre = data['titre']
                     livre.auteur = data['auteur']
                     livre.editeur = data['editeur']
-                return jsonify({
+                else:
+                    return jsonify({
                     'success': False,
                     'error':400,
                     'message': "You have entered empty information",
-                })
+                    })
                 livre.update()
+            else:
+                return jsonify({
+                    'success': False,
+                    'error':400,
+                    'message': " bad request you have to enter empty fields",
+                })
         except:
-                abort(404)
+            print("NANANANAncy")
+            return jsonify({
+                'success': False,
+                'error':400,
+                'message': " bad request you have to enter empty fields",
+            })
         return jsonify({
             'success modify': True,
             'livre': livre.format(),
