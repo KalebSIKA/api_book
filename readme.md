@@ -4,8 +4,8 @@ this api allows us to collect existing books and categories for various uses, to
 
 ### Installing Dependencies
 
-#### Python 3.8.5
-#### pip 20.0.2 from /usr/lib/python3/dist-packages/pip (python 3.8)
+#### Python 3.10.1
+#### pip 20.0.3 from /usr/lib/python3/dist-packages/pip (python  3.10.1)
 
 Follow instructions to install the latest version of python for your platform in the [python docs](https://docs.python.org/3/using/unix.html#getting-and-installing-the-latest-version-of-python)
 
