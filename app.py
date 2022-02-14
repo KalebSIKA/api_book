@@ -11,7 +11,7 @@ load_dotenv()
 app=Flask(__name__)#creer une instance de l'application
 motdepasse="root"
 
-app.config['SQLALCHEMY_DATABASE_URI']="postgres://uhqelmympoowfd:92a39a2691254d68d6b496d23b001723d743eec405b3ff320c40beb201d5acff@ec2-54-209-221-231.compute-1.amazonaws.com:5432/d3phojtih3pg64"
+app.config['SQLALCHEMY_DATABASE_URI']="postgresql://uhqelmympoowfd:92a39a2691254d68d6b496d23b001723d743eec405b3ff320c40beb201d5acff@ec2-54-209-221-231.compute-1.amazonaws.com:5432/d3phojtih3pg64"
 #connexion a la base de données
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
