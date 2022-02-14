@@ -11,7 +11,7 @@ load_dotenv()
 app=Flask(__name__)#creer une instance de l'application
 motdepasse="root"
 
-app.config['SQLALCHEMY_DATABASE_URI']="postgresql://postgres:{}@localhost:5432/projetflask".format(motdepasse)
+app.config['SQLALCHEMY_DATABASE_URI']="postgres://uhqelmympoowfd:92a39a2691254d68d6b496d23b001723d743eec405b3ff320c40beb201d5acff@ec2-54-209-221-231.compute-1.amazonaws.com:5432/d3phojtih3pg64"
 #connexion a la base de données
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -29,9 +29,9 @@ class Categorie(db.Model):
     def __init__(self,libelle_categorie) :
          self.libelle_categorie=libelle_categorie
     
-    def __init__(self,identity,libelle_categorie) :
+    """def __init__(self,identity,libelle_categorie) :
          self.id=identity
-         self.libelle_categorie=libelle_categorie
+         self.libelle_categorie=libelle_categorie"""
          
     def insert(self):
         db.session.add(self)
@@ -69,6 +69,14 @@ class Livre(db.Model):
         self.auteur=auteur
         self.editeur=editeur
         self.categorie_id=categorie_id
+
+    def __init__(self,id,isbn,titre,date_publication,auteur,editeur,categorie_id):
+        self.isbn=isbn
+        self.titre=titre
+        self.date_publication=date_publication
+        self.auteur=auteur
+        self.editeur=editeur
+        self.categorie_id=categorie_id
     
     def insert(self):
         db.session.add(self)
@@ -95,13 +103,68 @@ class Livre(db.Model):
 
 db.create_all()
 db.session.commit()
-
+###############################################################
+#paginate function
+###############################################################
 def paginate(request):
     items = [item.format() for item in request]
     return items
-   
-   
+###############################################################
+#function to facilite the search of id,title or lib in our database
+###############################################################
+def cate_lib():
+    liste=db.session.query(Categorie.libelle_categorie).all()
+    liste="###".join([i[0] for i in liste])
+    liste=liste.split("###")
+    return liste
+def cate_id():
+    liste=db.session.query(Categorie.id).all()
+    liste="###".join([str(i[0]) for i in liste])
+    liste=[int(i) for i in liste.split("###")]
+    return liste
 
+def books_lib():
+    liste=db.session.query(Livre.titre).all()
+    liste="###".join([i[0] for i in liste])
+    liste=liste.split("###")
+    return liste
+
+def books_id():
+    liste=db.session.query(Livre.id).all()
+    liste="###".join([str(i[0]) for i in liste])
+    liste=[int(i) for i in liste.split("###")]
+    return liste
+###############################################################
+#verify existance of id or title or lib functions
+###############################################################
+def exist_id_cat(id):
+    if id in cate_id():
+        return True
+    return False
+def exist_lib_cat(id):
+    if id in cate_lib():
+        return True
+    return False
+def exist_id_books(id):
+    if id in books_id():
+        return True
+    return False
+def exist_titre_books(id):
+    if id in books_lib:
+        return True
+    return False  
+###############################################################
+#bad request function
+###############################################################
+def return_err():
+    return jsonify({
+            'success': False,
+            'error':400,
+            'message': "bad_request",
+        })
+###############################################################
+#CORS
+###############################################################
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Headers',
@@ -110,7 +173,9 @@ def after_request(response):
                             'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
-
+###############################################################
+#display all specific books by its title
+###############################################################
 @app.route('/livres/<string:word>')
 def search_book(word):
     mot = '%'+word+'%'
@@ -119,14 +184,23 @@ def search_book(word):
     return jsonify({
         'livre': livre
     })
+###############################################################
+#display all specific categorie by its libelle
+###############################################################
 @app.route('/categories/<string:word>')
 def search_categorie(word):
-    mot = '%'+word+'%'
-    categorie = Categorie.query.filter(Categorie.libelle_categorie.like(mot)).all()
-    categorie = paginate(categorie)
-    return jsonify({
-        'livre': categorie
-    })
+    if exist_lib_cat(word):
+        mot = '%'+word+'%'
+        categorie = Categorie.query.filter(Categorie.libelle_categorie.like(mot)).all()
+        categorie = paginate(categorie)
+        return jsonify({
+            'livre': categorie
+        })
+    else :
+      return return_err()
+###############################################################
+#display all categories
+###############################################################
 @app.route('/categories')
 def get_categories():
     categories = Categorie.query.all()
@@ -136,6 +210,9 @@ def get_categories():
         'Categorie': categories,
         'total_categories': len(categories)
     })
+###############################################################
+#display all books
+###############################################################
 @app.route('/livres')
 def get_livres():
     livres= Livre.query.all()
@@ -145,70 +222,103 @@ def get_livres():
         'Livres':livres,
         'total_livres': len(livres)
     })
+###############################################################
+#display a specific category by its identifier(id)
+###############################################################
 @app.route('/categories/<int:id>')
 def get_categorie(id):
-    categorie = Categorie.query.get(id)
-    if categorie is None:
-        abort(404)
+    if exist_id_cat(id):
+        categorie = Categorie.query.get(id)
+        if categorie is None:
+            abort(404)
+        else:
+            return categorie.format()
     else:
-        return categorie.format()
-
+        return return_err()
+###############################################################
+#display a specific book by its identifier(id)
+###############################################################
 @app.route('/livres/<int:id>')
 def get_livre(id):
-    livre = Livre.query.get(id)
-    if livre is None:
-        abort(404)
+    if exist_id_books(id):
+        livre = Livre.query.get(id)
+        if livre is None:
+            abort(404)
+        else:
+            return livre.format()
     else:
-        return livre.format()
-
+        return return_err()
+###############################################################
+#delete a specific category by its identifier(id)
+###############################################################
 @app.route('/categories/<int:id>',methods=['DELETE'])
 def delete_categorie(id):
-    categorie = Categorie.query.get(id)
-    categorie.delete()
-    return jsonify({
-        'success': True,
-        'delete successfully': id,
-    })
-
+    if exist_id_cat(id):
+        categorie = Categorie.query.get(id)
+        categorie.delete()
+        return jsonify({
+            'success': True,
+            'delete successfully': id,
+        })
+    else:
+        return return_err()
+###############################################################
+#delete a specific book by its identifier(id)
+###############################################################
 @app.route('/livres/<int:id>',methods=['DELETE'])
 def delete_livres(id):
-    livre =Livre.query.get(id)
-    livre.delete()
-    return jsonify({
-        'success': True,
-        'delete successfully': id,
-    })
-
+    if exist_id_books(id):
+        livre =Livre.query.get(id)
+        livre.delete()
+        return jsonify({
+            'success': True,
+            'delete successfully': id,
+        })
+    else:
+        return return_err()
+###############################################################
+#modify a specific category by its identifier(id)
+###############################################################
 @app.route('/categories/<int:id>',methods=['PATCH'] )
 def update_categorie(id):
-    data = request.get_json()
-    categorie= Categorie.query.get(id)
-    if 'libelle_categorie' in data:
-        categorie.libelle_categorie = data['libelle_categorie']
-        #query.libelle_categorie = input()
-        categorie.update()
-    return jsonify({
-        'success modify': True,
-        'categorie': categorie.format(),
-    })
-
+    if exist_id_cat(id):
+        data = request.get_json()
+        categorie= Categorie.query.get(id)
+        if 'libelle_categorie' in data:
+            categorie.libelle_categorie = data['libelle_categorie']
+            #query.libelle_categorie = input()
+            categorie.update()
+        return jsonify({
+            'success modify': True,
+            'categorie': categorie.format(),
+        })
+    else:
+        return return_err()
+###############################################################
+#modify a specific book by its identifier(id)
+###############################################################
 @app.route('/livres/<int:id>',methods=['PATCH'] )
 def update_livres(id):
-    data = request.get_json()
-    livre = Livre.query.get(id)
-    try:
-            if 'titre' in data and 'auteur' in data and 'editeur' in data:
-                livre.titre = data['titre']
-                livre.auteur = data['auteur']
-                livre.editeur = data['editeur']
-            livre.update()
-    except:
-            abort(404)
-    return jsonify({
-        'success modify': True,
-        'livre': livre.format(),
-    })
-
+    if exist_id_books(id):
+        data = request.get_json()
+        livre = Livre.query.get(id)
+        try:
+                if 'titre' in data and 'auteur' in data and 'editeur' in data:
+                    livre.titre = data['titre']
+                    livre.auteur = data['auteur']
+                    livre.editeur = data['editeur']
+                livre.update()
+        except:
+                abort(404)
+        return jsonify({
+            'success modify': True,
+            'livre': livre.format(),
+        })
+    else:
+        return return_err()
+###############################################################
+#add a category
+###############################################################
 @app.route('/categories', methods=['POST'])
 def add_categorie():
     data = request.get_json()
@@ -230,17 +340,24 @@ def add_categorie():
         'added': categorie.format(),
         'total_categorie': count,
     })
-
+###############################################################
+#add a book 
+###############################################################
 @app.route('/livres', methods=['POST'])
 def add_livre():
     data = request.get_json()
+    #if data['id']:
+    id = data['id']
     isbn = data['isbn']
     titre = data['titre']
     date= data['date_publication']
     auteur = data['auteur']
     editeur = data['editeur']
     cateId = data['categorie_id']
-    livre= Livre(isbn,titre,date,auteur,editeur,cateId)
+    #if exist_id_books(id)==False and id:
+    livre= Livre(id,isbn,titre,date,auteur,editeur,cateId)
+    #else:
+    #    livre= Livre(isbn,titre,date,auteur,editeur,cateId)
     livre.insert()
     count = Livre.query.count()
     return jsonify({
@@ -248,13 +365,18 @@ def add_livre():
         'added': livre.format(),
         'total_livre': count,
     })
-
+###############################################################
+#view books in a category
+###############################################################
 @app.route('/livres/categories/<int:id>')
 def get_livre_from_categorie(id):
-    books=db.session.query(Livre).join(Categorie).filter(Livre.categorie_id==id)
-    books= paginate(books)
-    return jsonify({
-        'success':True,
-        'Livres':books,
-        'total_livres': len(books)
-    })    
+    if exist_id_cat(id):
+        books=db.session.query(Livre).join(Categorie).filter(Livre.categorie_id==id)
+        books= paginate(books)
+        return jsonify({
+            'success':True,
+            'Livres':books,
+            'total_livres': len(books)
+        }) 
+    else:
+        return return_err()   
