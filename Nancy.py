@@ -12,7 +12,6 @@ app=Flask(__name__)#creer une instance de l'application
 motdepasse="root"
 
 app.config['SQLALCHEMY_DATABASE_URI']="postgresql://uhqelmympoowfd:92a39a2691254d68d6b496d23b001723d743eec405b3ff320c40beb201d5acff@ec2-54-209-221-231.compute-1.amazonaws.com:5432/d3phojtih3pg64"
-
 #connexion a la base de données
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -360,7 +359,6 @@ def update_livres(id):
                     'message': " bad request you have to enter empty fields",
                 })
         except:
-            print("NANANANAncy")
             return jsonify({
                 'success': False,
                 'error':400,
@@ -379,16 +377,16 @@ def update_livres(id):
 def add_categorie():
     data = request.get_json()
     idtf=libtf=False
-    if 'id' in data :
+    """if 'id' in data :
         idt=data['id']
-        idtf=True
+        idtf=True"""
     if 'libelle_categorie' in data:
         libelle = data['libelle_categorie']
         libtf=True
-    if libtf and  idtf==False:
+    if libtf :
       categorie= Categorie(libelle)
-    else:
-        categorie= Categorie(idt,libelle)
+    """else:
+        categorie= Categorie(idt,libelle)"""
     categorie.insert()
     count = categorie.query.count()
     return jsonify({
@@ -402,18 +400,18 @@ def add_categorie():
 @app.route('/livres', methods=['POST'])
 def add_livre():
     data = request.get_json()
-    #if data['id']:
-    id = data['id']
+    """if data['id']:
+       id = data['id']"""
     isbn = data['isbn']
     titre = data['titre']
     date= data['date_publication']
     auteur = data['auteur']
     editeur = data['editeur']
     cateId = data['categorie_id']
-    #if exist_id_books(id)==False and id:
-    livre= Livre(id,isbn,titre,date,auteur,editeur,cateId)
-    #else:
-    #    livre= Livre(isbn,titre,date,auteur,editeur,cateId)
+    #if exist_id_books(id)==False  :
+    livre= Livre(isbn,titre,date,auteur,editeur,cateId)
+    """else:
+        livre= Livre(isbn,titre,date,auteur,editeur,cateId)"""
     livre.insert()
     count = Livre.query.count()
     return jsonify({
