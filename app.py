@@ -7,11 +7,11 @@ from flask import Flask, jsonify, redirect, render_template, request, url_for, a
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 load_dotenv()
-
+# https://kaleb-sika-flask-api-book.herokuapp.com/ 
 app=Flask(__name__)#creer une instance de l'application
 motdepasse="root"
 
-app.config['SQLALCHEMY_DATABASE_URI']="postgresql://uhqelmympoowfd:92a39a2691254d68d6b496d23b001723d743eec405b3ff320c40beb201d5acff@ec2-54-209-221-231.compute-1.amazonaws.com:5432/d3phojtih3pg64"
+app.config['SQLALCHEMY_DATABASE_URI']="postgresql://postgres:{}@localhost:5432/projetflask".format(motdepasse)
 #connexion a la base de données
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -103,6 +103,9 @@ class Livre(db.Model):
 
 db.create_all()
 db.session.commit()
+def verify_suppr_cat(id):
+    liste=db.session.query(Livre.categorie_id).all()  
+    return liste
 ###############################################################
 #paginate function
 ###############################################################
@@ -156,6 +159,12 @@ def exist_titre_books(id):
 ###############################################################
 #bad request function
 ###############################################################
+def return_erk():
+    return jsonify({
+            'success': False,
+            'error':400,
+            'message': "unable to delete category , category includes books",
+        })
 def return_err():
     return jsonify({
             'success': False,
@@ -255,11 +264,15 @@ def get_livre(id):
 def delete_categorie(id):
     if exist_id_cat(id):
         categorie = Categorie.query.get(id)
-        categorie.delete()
-        return jsonify({
-            'success': True,
-            'delete successfully': id,
-        })
+        if len(verify_suppr_cat(id))==0:
+            categorie.delete()
+            return jsonify({
+                'success': True,
+                'delete successfully': id,
+            })
+        else:
+            return return_erk()
+        
     else:
         return return_err()
 ###############################################################
@@ -303,7 +316,7 @@ def update_livres(id):
         data = request.get_json()
         livre = Livre.query.get(id)
         try:
-                if 'titre' in data and 'auteur' in data and 'editeur' in data:
+                if   'titre' in data and 'auteur' in data and 'editeur' in data:
                     livre.titre = data['titre']
                     livre.auteur = data['auteur']
                     livre.editeur = data['editeur']
