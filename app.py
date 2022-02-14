@@ -169,7 +169,7 @@ def return_err():
     return jsonify({
             'success': False,
             'error':400,
-            'message': "bad_request",
+            'message': "bad_request verify the existence of the object ",
         })
 ###############################################################
 #CORS
@@ -301,6 +301,12 @@ def update_categorie(id):
             categorie.libelle_categorie = data['libelle_categorie']
             #query.libelle_categorie = input()
             categorie.update()
+        else:
+            return jsonify({
+            'success': False,
+            'error':400,
+            'message': "You have entered empty information",
+        })
         return jsonify({
             'success modify': True,
             'categorie': categorie.format(),
@@ -320,6 +326,11 @@ def update_livres(id):
                     livre.titre = data['titre']
                     livre.auteur = data['auteur']
                     livre.editeur = data['editeur']
+                return jsonify({
+                    'success': False,
+                    'error':400,
+                    'message': "You have entered empty information",
+                })
                 livre.update()
         except:
                 abort(404)
@@ -381,7 +392,7 @@ def add_livre():
 ###############################################################
 #view books in a category
 ###############################################################
-@app.route('/livres/categories/<int:id>')
+@app.route('/categories/<int:id>/livres')
 def get_livre_from_categorie(id):
     if exist_id_cat(id):
         books=db.session.query(Livre).join(Categorie).filter(Livre.categorie_id==id)
