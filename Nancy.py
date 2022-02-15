@@ -190,7 +190,7 @@ def init():
             'success': False,
             'code':200,
             'Lancement du piratage': "---------success-----------",
-            'accés a  la machines':"*--------100%---------"
+            'accés a  la machines':"*--------100%---------",
             'accés a la vie privé':"----------100%----------"
         })
 ###############################################################
