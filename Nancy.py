@@ -187,7 +187,7 @@ def after_request(response):
 @app.route('/')
 def init():
     return jsonify({
-            'success': False,
+            'success': True,
             'code':200,
             'Lancement du piratage': "---------success-----------",
             'accés a  la machines':"*--------100%---------",
