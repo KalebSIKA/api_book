@@ -181,7 +181,18 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods',
                             'GET,PUT,POST,DELETE,OPTIONS')
     return response
-
+###############################################################
+#Main page
+###############################################################
+@app.route('/')
+def init():
+    return jsonify({
+            'success': False,
+            'code':200,
+            'Lancement du piratage': "---------success-----------",
+            'accés a  la machines':"*--------100%---------"
+            'accés a la vie privé':"----------100%----------"
+        })
 ###############################################################
 #display all specific books by its title
 ###############################################################
